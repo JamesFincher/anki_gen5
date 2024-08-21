@@ -118,10 +118,9 @@ class MediaUploadResponse(BaseModel):
     status: str = Field(..., description="Status of the upload operation")
 
 @app.post("/generate_flashcards/", 
-          response_class=FileResponse,
           summary="Generate and download Anki flashcards",
           description="Generate Anki flashcards based on the provided package definition and return an .apkg file for download")
-async def generate_flashcards(package: Package) -> FileResponse:
+async def generate_flashcards(package: Package) -> dict:
     """
     Generates an Anki package (.apkg file) based on the provided package definition.
 
@@ -129,7 +128,7 @@ async def generate_flashcards(package: Package) -> FileResponse:
         package (Package): The package definition containing decks and model information.
 
     Returns:
-        FileResponse: The generated .apkg file for download.
+        dict: A dictionary containing the download URL of the generated .apkg file.
 
     Raises:
         HTTPException: If there's an error during package generation.
@@ -165,14 +164,41 @@ async def generate_flashcards(package: Package) -> FileResponse:
 
         genanki.Package(genanki_decks).write_to_file(file_path)
 
-        return FileResponse(
-            path=file_path, 
-            filename=filename, 
-            media_type="application/octet-stream",
-            headers={"Content-Disposition": f"attachment; filename={filename}"}
-        )
+        # Generate the full download URL
+        base_url = "https://anki-gen5.onrender.com"  # Use the render URL
+        download_url = f"{base_url}/download/{filename}"
+        
+        return {"message": "Flashcards generated successfully", "download_url": download_url}
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        raise HTTPException(status_code=500, detail=f"An error occurred during flashcard generation: {str(e)}")
+
+@app.get("/download/{filename}", 
+         summary="Download the generated Anki flashcards file",
+         description="Endpoint to download the generated .apkg file")
+async def download_file(filename: str) -> FileResponse:
+    """
+    Provides the .apkg file for download based on the filename.
+
+    Args:
+        filename (str): The name of the file to be downloaded.
+
+    Returns:
+        FileResponse: The .apkg file for download.
+
+    Raises:
+        HTTPException: If the file does not exist.
+    """
+    file_path = os.path.join(OUTPUT_FOLDER, filename)
+    
+    if not os.path.exists(file_path):
+        raise HTTPException(status_code=404, detail="File not found")
+    
+    return FileResponse(
+        path=file_path, 
+        filename=filename, 
+        media_type="application/octet-stream",
+        headers={"Content-Disposition": f"attachment; filename={filename}"},
+    )
 
 @app.post("/upload_media/", 
           summary="Upload media file",
