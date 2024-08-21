@@ -117,10 +117,18 @@ class MediaUploadResponse(BaseModel):
     filename: str = Field(..., description="Name of the uploaded file")
     status: str = Field(..., description="Status of the upload operation")
 
+class FlashcardGenerationResponse(BaseModel):
+    """
+    Response model for flashcard generation endpoint.
+    """
+    message: str = Field(..., description="Status message of the operation")
+    download_url: str = Field(..., description="URL to download the generated .apkg file")
+
 @app.post("/generate_flashcards/", 
           summary="Generate and download Anki flashcards",
-          description="Generate Anki flashcards based on the provided package definition and return an .apkg file for download")
-async def generate_flashcards(package: Package) -> dict:
+          description="Generate Anki flashcards based on the provided package definition and return an .apkg file for download",
+          response_model=FlashcardGenerationResponse)
+async def generate_flashcards(package: Package) -> FlashcardGenerationResponse:
     """
     Generates an Anki package (.apkg file) based on the provided package definition.
 
@@ -128,7 +136,7 @@ async def generate_flashcards(package: Package) -> dict:
         package (Package): The package definition containing decks and model information.
 
     Returns:
-        dict: A dictionary containing the download URL of the generated .apkg file.
+        FlashcardGenerationResponse: A response containing the download URL of the generated .apkg file.
 
     Raises:
         HTTPException: If there's an error during package generation.
@@ -168,7 +176,7 @@ async def generate_flashcards(package: Package) -> dict:
         base_url = "https://anki-gen5.onrender.com"  # Use the render URL
         download_url = f"{base_url}/download/{filename}"
         
-        return {"message": "Flashcards generated successfully", "download_url": download_url}
+        return FlashcardGenerationResponse(message="Flashcards generated successfully", download_url=download_url)
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"An error occurred during flashcard generation: {str(e)}")
 
