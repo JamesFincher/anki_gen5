@@ -12,6 +12,10 @@ app = FastAPI(
     title="Anki Flashcard Generator API",
     description="A backend API for managing Anki flashcards and decks. This API allows users to create custom flashcard decks, upload media, and download generated Anki packages (.apkg files).",
     version="1.0.0",
+    servers=[
+        {"url": "https://anki-gen5.onrender.com", "description": "Production server"},
+        {"url": "http://localhost:8000", "description": "Local development server"}
+    ]
 )
 
 # Use a temporary directory for file operations
